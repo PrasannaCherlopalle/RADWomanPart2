@@ -1,0 +1,85 @@
+public with sharing class LeadTriggerHandler {
+    
+    //trigger variables
+    List<Lead> newLeads;
+    Map<ID, Lead> oldLeadMap;
+    Map<ID, Lead> newLeadMap;
+   
+    //Constructor for insert
+    public LeadTriggerHandler (List<Lead> newLeads) {
+        this.newLeads = newLeads;
+    }
+    //constructor for update
+    public LeadTriggerHandler (Map<ID, Lead> oldLeadMap, Map<ID, Lead> newLeadMap) {
+        this.oldLeadMap = oldLeadMap;
+        this.newLeadMap = newLeadMap;
+    }
+ 	public void handleAfterInsert(){
+        
+        //declare a new task list
+        List<Task> lstTask = new List<Task>(); 
+        
+        //for each lead in trigger.new set the task details and add to the list
+        for(lead lstLeads : this.newLeads){
+            //set the task details
+            Task leadTask = new Task();
+            leadTask.Subject = 'Follow up with the new ' +lstLeads.ProductInterest__c + ' lead';
+            leadTask.WhoId = lstLeads.Id;
+            if(lstLeads.ProductInterest__c == 'Cookbook Authorship'){
+                leadTask.ActivityDate = date.today() + 5;
+                leadTask.Priority = 'Low';
+            }else if(lstLeads.ProductInterest__c == 'Cookbook Editing'){
+                leadTask.ActivityDate = date.today() + 3;
+                leadTask.Priority = 'Normal';                
+            }else if(lstLeads.ProductInterest__c == 'Cookbook Distribution'){
+                leadTask.ActivityDate = date.today() + 1;
+                leadTask.Priority = 'High';                
+            }
+            //add the new task to the list
+            lstTask.add(leadTask);
+            System.debug('Adding '+ leadTask.Priority + ' Task');
+        }
+        //insert the list of tasks
+        if (lstTask.size() > 0){
+            System.debug('I am inside if statement size of the list:' + lstTask.size());
+        	insert lstTask;
+        }
+    }
+    
+    public void handleAfterUpdate(){
+        
+        //declare a new task list
+        List<Task> lstTask = new List<Task>(); 
+        
+        //for each lead in trigger.new, check if product Interest is updated, 
+        // set the task details and add to the list
+        for(Lead lstLeads : this.newLeadMap.Values()){
+            
+            //set the task details
+            Task leadTask = new Task();
+            
+            //Check if productInterest is updated
+            if(this.oldLeadMap.get(lstLeads.Id).ProductInterest__c != this.newLeadMap.get(lstLeads.Id).ProductInterest__c ){         
+                //set the task details
+                leadTask.Subject = 'Follow up with the new ' +lstLeads.ProductInterest__c + ' lead';
+                leadTask.WhoId = lstLeads.Id;
+                if(lstLeads.ProductInterest__c == 'Cookbook Authorship'){
+                    leadTask.ActivityDate = date.today() + 5;
+                    leadTask.Priority = 'Low';
+                }else if(lstLeads.ProductInterest__c == 'Cookbook Editing'){
+                    leadTask.ActivityDate = date.today() + 3;
+                    leadTask.Priority = 'Normal';                
+                }else if(lstLeads.ProductInterest__c == 'Cookbook Distribution'){
+                    leadTask.ActivityDate = date.today() + 1;
+                    leadTask.Priority = 'High';                
+                }
+                //add the new task to the list
+                lstTask.add(leadTask);
+            }
+        }
+        //insert the list of tasks
+        if (lstTask.size() > 0){
+        	insert lstTask;
+        }
+    }
+}
