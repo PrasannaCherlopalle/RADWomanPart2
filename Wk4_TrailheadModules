@@ -1,0 +1,175 @@
+//Week 4 - Trailhead Module: 'Use sObjects and DML' 
+
+public class AccountHandler {
+    
+    public static void insertAccount(Integer nAccounts){
+        Integer counter = 0;
+        List<Account> addAccounts = new List<Account>();
+        
+        While(counter < nAccounts){
+            Account newAcct = new Account();
+            newAcct.Name = 'Acme Inc '+ counter;
+            newAcct.AccountNumber = 'A000'+counter;
+            addAccounts.add(newAcct);
+            counter++;
+        }
+        if(addAccounts.size() > 0){
+            insert addAccounts;
+        }
+    }
+}
+
+//Execute anonymous
+AccountHandler.insertAccount(3);
+
+-----------------------------------------------------------------------
+//Week 4 - Trailhead Module: 'Generate Data for Test'
+//Load Mock_Data into staticResources
+
+@isTest
+public class myDataGenerationTests {
+    
+    //Load test data
+	@TestSetup
+    static void loadTestAccounts(){
+        List<sObject> sObjAcctList = Test.loadData(Account.sObjectType,'Mock_Data');
+    }
+    
+    //Test load test accounts
+    @isTest 
+    static void testLoadTestAccounts(){
+        List<Account> lstAccounts = [SELECT Id FROM Account];
+        system.assert(lstAccounts.size() == 15, 'expected 15 accounts');
+        //system.debug(lstAccounts.Size() + ' Accounts created');
+    }
+}
+
+//Run Test
+Test -> New Run -> myDataGenerationTests.testLoadTestAccounts -> Run
+
+---------------------------------------------------------------------------
+//Week 4 - Trailhead module - Write Positive and Negative test cases
+//Calculator_tests
+@isTest
+public class Calculator_Tests {
+	
+    @isTest static void testPositiveAddition(){
+        Integer pAdd1 = 3, pAdd2 = 5;
+        Test.startTest();
+        	System.assertEquals(Calculator.addition(pAdd1, pAdd2), 8, 'Expected to get 8');
+    	Test.stopTest();
+    }
+    
+    @isTest static void testPositiveSubtraction(){
+        Integer pSub1 =15, pSub2 = 8;
+        Test.startTest();
+        	System.assertEquals(Calculator.subtraction(pSub1, pSub2), 7, 'Expected to get 7');
+    	Test.stopTest();
+    }
+    
+    @isTest static void testPositiveMultiply(){
+        Integer pMul1 = 4, pMul2 = 8;
+        Test.startTest();
+        	System.assertEquals(Calculator.Multiply(pMul1, pMul2), 32, 'Expected to get 32');
+    	Test.stopTest();
+    }
+    
+    @isTest static void testPositiveDivide(){
+        Integer pDiv1 = 121, pDiv2 = 11;
+        Test.startTest();
+        	System.assertEquals(Calculator.Divide(pDiv1, pDiv2), 11, 'Expected to get 11');
+    	Test.stopTest();
+    }
+    
+    @isTest static void testNegativeMultiply(){
+        Integer nMul1 = 3, nMul2 = 0, retMultiply = 0;
+        Boolean bException = false;
+        Test.startTest();
+          try{
+              retMultiply = Calculator.multiply(nMul1, nMul2);
+          } catch (Calculator.CalculatorException cEx){
+              if(cEx.getMessage().equalsIgnoreCase('It doesn\'t make sense to multiply by zero')){
+					bException = true;
+              }
+          }
+       Test.stopTest();   
+        system.assert(bException, 'Calculator should have thrown an exception');
+    }
+    
+    @isTest static void testNegativeZeroDivide(){
+        Integer nDiv1 = 3, nDiv2 = 0;
+        Boolean bException = false;
+        Decimal retDivide;
+        Test.startTest();
+          try{
+              retDivide= Calculator.Divide(nDiv1, nDiv2);
+          } catch (Calculator.CalculatorException cEx){
+              if(cEx.getMessage().equalsIgnoreCase('you still can\'t divide by zero')){
+					bException = true;
+              }
+          }
+       Test.stopTest();   
+        system.assert(bException, 'Calculator should have thrown an exception');
+    }
+    
+    @isTest static void testDivideLessthanZero(){
+        Integer nDiv1 = -3, nDiv2 = 1;
+        Boolean bException = false;
+        Decimal retDivide;
+        Test.startTest();
+          try{
+              retDivide = Calculator.Divide(nDiv1, nDiv2);              
+          } catch (Calculator.CalculatorException cEx){
+              //System.debug(cEx.getMessage());
+              //System.debug('Division returned a negative value.' + retDivide);
+              if(cEx.getMessage().equalsIgnoreCase('Division returned a negative value.' + nDiv1/nDiv2)){
+					bException = true;
+              }
+          }
+       Test.stopTest();   
+        system.assert(bException, 'Calculator should have thrown an exception');
+    }
+}
+---------------------------------------------------------------------------------
+//Week 4 Trailhead module - Permission test
+
+@isTest
+public class PositivePermission_tests {
+
+    @TestSetup static void testSetup(){        
+        Account a = TestFactory.getAccount('ReadOnly Access', true);
+        Private_Object__c objPrivateObject = new Private_Object__c(account__c = a.id,notes__c = 'Complete View Access');
+    	insert objPrivateObject;
+    }
+    
+    @isTest static void testPositivePermission(){
+        user u = TestFactory.generateUser('Custom User');
+        System.runAs(u){
+        	Private_Object__c[] objPos;
+        	Test.startTest();
+            	objPos = [SELECT id, Account__c, notes__C FROM Private_Object__c];
+            Test.stopTest();
+            System.assert(objPos.Size() > 0, 'Custom User has Read Only access to all Private_Object__c records');
+        }
+    }
+}
+---------------------------------------------------------------------------------------
+//Week 4 Trailhead Module HTTPMock
+
+  @isTest static void test_method_two() {
+    HttpMockFactory mock = new HttpMockFactory(500, 'Not OK', 'Did not recieve a 200 status code: ', new Map<String,String>());
+    Test.setMock(HttpCalloutMock.class, mock);
+    String result;
+    boolean bException = false;
+    Test.startTest();      
+      try{
+              result = ExternalSearch.googleIt('epic search');             
+         } catch (ExternalSearch.ExternalSearchException eException){
+              System.debug(eException.getMessage());
+              if(eException.getMessage().equalsIgnoreCase('Did not recieve a 200 status code: '+ 500)){
+					bException = true;
+              }
+          }
+    Test.stopTest();   
+    system.assert(bException, 'External Search should have thrown an exception');
+  }
