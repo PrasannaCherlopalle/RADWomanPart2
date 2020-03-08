@@ -1,0 +1,103 @@
+public with sharing class RecipeTriggerHandler {
+    //trigger variables
+    List<Recipe__c> newRecipes;
+    Map<ID, Recipe__c> oldRecipeMap;
+    Map<ID, Recipe__c> newRecipeMap;
+    
+    //Constructor for insert
+    public RecipeTriggerHandler (List<Recipe__c> newRecipes) {
+        this.newRecipes = newRecipes;
+    }
+    //constructor for update
+    public RecipeTriggerHandler (Map<ID, Recipe__c> oldRecipeMap, Map<ID, Recipe__c> newRecipeMap) {
+        this.oldRecipeMap = oldRecipeMap;
+        this.newRecipeMap = newRecipeMap;
+    }
+    
+    public void handleBeforeInsert(){      
+        //for each Recipe in trigger.new, check for required & set complexity
+        for(Recipe__c Recipe : this.newRecipes){     
+            flagAsDraft(Recipe);
+            setComplexity(Recipe);
+        }
+    }
+    
+    public void handleBeforeUpdate(){
+        //for each Recipe in trigger.new, check for required fields & set complexity
+        for(Recipe__c Recipe : this.newRecipeMap.Values()){
+            flagAsDraft(Recipe);
+            setComplexity(Recipe);
+        }
+    }
+    
+ 	 public void handleAfterInsert(){  
+        set<Id> RcpeIdSet = new set<id>();
+        for(Recipe__c Rcpe : this.newRecipes){
+            RcpeIdSet.add(Rcpe.id);
+        }
+        AddReviewTaskForRecipes(RcpeIdSet);
+    }
+    
+    public void handleAfterUpdate(){
+        Set<Id> RcpeIdSet = this.newRecipeMap.keySet();
+        AddReviewTaskForRecipes(RcpeIdSet);
+    }
+    
+    //Checks for the missing required fields and flags the recipe as draft 
+    private void flagAsDraft(Recipe__c Rcpe){
+        //Check for required fields
+        if(String.IsBlank(Rcpe.Name) 
+           || Rcpe.Active_Time__c == NULL 
+           || String.IsBlank(Rcpe.Description__c) 
+           || String.isBlank(Rcpe.Active_Time_Units__c) 
+           || Rcpe.Servings__c == NULL){
+           Rcpe.Draft__c = True; 
+        }
+        else{
+           Rcpe.Draft__c = False;  
+        }        
+    }
+    
+    //set recipe complexity
+    Private void setComplexity(Recipe__c Rcpe){        
+        //get complexity rate mapping from helper function rateRecipeComplexity
+        Integer nRating = Helperfunctions.rateRecipeComplexity(Rcpe);
+        //set the complexity 
+        SWITCH on nRating{
+            WHEN 3    {Rcpe.Complexity__c = 'Difficult';}
+            WHEN 2    {Rcpe.Complexity__c = 'Moderate';}
+            WHEN 1    {Rcpe.Complexity__c = 'Simple';}
+            WHEN else {System.debug('Complexity not set');}
+        }        
+    }
+    
+    //Add a review tasks for non-draft recipes if they are used in a cookbook
+    Private void AddReviewTaskForRecipes(Set<Id> RcpeIdSet){
+        List<Task> lstTask = new List<Task>();  
+        
+        for(Recipe__c Rcpe : [SELECT Id, (Select Cookbook__c, Cookbook__r.Name, Recipe__c, Recipe__r.Name, Cookbook__r.OwnerId, Cookbook__r.Publish_Date__c FROM Recipe_Usages__r)
+								                FROM Recipe__c
+                               WHERE Id in : RcpeIdSet
+                                 AND Draft__c = False]){
+             String taskDescription = '';
+            //for each recipe loop through child records  
+            for(Recipe_Usage__c rUsage : Rcpe.Recipe_Usages__r){
+                taskDescription = taskDescription + '\n'+ rUsage.CookBook__r.name.toUpperCase() +' - Published on ' + String.valueOfGmt(rUsage.Cookbook__r.Publish_Date__c);                            
+            }
+            // for each child record loop through for second time
+            for(Recipe_Usage__c rUsage : Rcpe.Recipe_Usages__r){
+                 Task rTask = new Task();
+            		rTask.OwnerId 		  = rUsage.Cookbook__r.OwnerId;
+            		rTask.ActivityDate 	= System.Today().addDays(7);
+            		rTask.Status 		    = 'Not Started';
+            		rTask.whatId		    = rUsage.Recipe__c;
+            		rTask.Subject 		  = 'Recipe Review Task';
+            		rTask.Description 	= 'Task created to review '+ rUsage.Recipe__r.Name + ' recipe in ' + taskDescription + ' cookbooks';
+            	 lstTask.add(rTask);                           
+            }    
+        }
+        if(lstTask.Size()>0){
+            insert lstTask;
+        }     
+    }
+}
