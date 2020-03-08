@@ -1,0 +1,33 @@
+trigger RecipeTrigger on Recipe__c ( before insert, after insert, before update, after update, before delete, after delete) {
+  if (Trigger.isBefore) {
+    if (Trigger.isInsert) {
+      	// Instantiate the Handler and set Trigger records
+    	RecipeTriggerHandler handler = new RecipeTriggerHandler(Trigger.new);
+      	handler.handleBeforeInsert();
+    } 
+    if (Trigger.isUpdate) {
+      	// Instantiate the Handler and set Trigger records
+    	RecipeTriggerHandler handler = new RecipeTriggerHandler(Trigger.oldMap, Trigger.newMap);
+      	handler.handleBeforeUpdate();
+    }
+    if (Trigger.isDelete) {
+      // Call class logic here!
+    }
+  }
+
+  if (Trigger.isAfter) {
+    if (Trigger.isInsert) {
+        // Instantiate the Handler and set Trigger records
+    	RecipeTriggerHandler handler = new RecipeTriggerHandler(Trigger.new);
+      	handler.handleAfterInsert();
+    } 
+    if (Trigger.isUpdate) {
+      	// Instantiate the Handler and set Trigger records
+    	RecipeTriggerHandler handler = new RecipeTriggerHandler(Trigger.oldMap, Trigger.newMap);
+      	handler.handleAfterUpdate();
+    }
+    if (Trigger.isDelete) {
+      // Call class logic here!
+    }
+  }
+}
