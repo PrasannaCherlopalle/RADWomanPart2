@@ -1,0 +1,61 @@
+// try, catch and assert error message
+@isTest static void testSetComplexityNegative(){
+   Test.startTest();
+      List<Recipe__c> lstRecipes = new List<Recipe__c>();        
+      lstRecipes.add(new Recipe__c(Name='Clam Chowder Clam Chowder Clam Chowder Clam Chowder Clam Chowder Clam Chowder Clam Chowder Clam Chowder', 				
+                 Description__c='Creamy Clam Chowder', 			
+                 Servings__c = 20, 	
+                 Active_Time__c=2,	
+                 Active_Time_Units__c='Hours'));
+      try {
+          insert lstRecipes;
+        } catch(DmlException e) {
+            String eMsg = 'Message: ' + e.getMessage()+   
+                    '\n Cause: ' + e.getCause()+   
+                    '\n Line number: ' + e.getLineNumber()+   
+                    '\n Stack trace: ' + e.getStackTraceString() +
+                      '\n Status Code: ' + e.getDmlStatusCode(0);  
+            System.debug(eMsg);
+            System.assertEquals('STRING_TOO_LONG' , e.getDmlStatusCode(0) );
+        }	        	
+  Test.stopTest();
+}
+
+  @isTest static void testSetComplexity(){
+  Test.startTest();
+    //Compile list of recipes to insert
+    List<Recipe__c> lstRecipes = new List<Recipe__c>();        
+      lstRecipes.add(new Recipe__c(Name='Clam Chowder', 				Description__c='Creamy Clam Chowder', 			Servings__c = 20, 	Active_Time__c=2,	Active_Time_Units__c='Hours'));
+      lstRecipes.add(new Recipe__c(Name='Gravy', 						      Description__c='Turkey Gravy', 					Servings__c = 3,  	Active_Time__c=60,	Active_Time_Units__c='Minutes'));
+      lstRecipes.add(new Recipe__c(Name='Creamy Corn Soup', 			Description__c='fresh sweet corn soup', 		Servings__c = 2,  	Active_Time__c=1,	Active_Time_Units__c='Hours'));
+      lstRecipes.add(new Recipe__c(Name='Buttersquash Soup', 			Description__c='flavored butter squash soup', 	Servings__c = 2,  	Active_Time__c=0.5,	Active_Time_Units__c='Hours'));
+      lstRecipes.add(new Recipe__c(Name='Chicken chunky noodle soup', Description__c='noodle soup', 					Servings__c = 2,  	Active_Time__c=70,	Active_Time_Units__c='Minutes'));
+      lstRecipes.add(new Recipe__c(Name='Hot and Spicy Soup', 		Description__c='Spicy soup', 					Servings__c = 5,  	Active_Time__c=20,	Active_Time_Units__c='Minutes'));
+
+    //insert recipes
+    insert lstRecipes;        
+    system.assert(lstRecipes.size() == 6, 'Successfully loaded 6 recipes');        
+
+    //Get complexity of the recipes inserted and check 
+    List<Recipe__c> lstRcipsWithComplexity = [SELECT Id, Servings__c, Active_Time__c, Active_Time_Units__c, Complexity__c FROM Recipe__c Where Draft__c = false];
+    For(Recipe__c r: lstRcipsWithComplexity){
+      if(r.Active_Time_Units__c=='Minutes' && r.Active_Time__c >= 60 ||
+         r.Active_Time_Units__c=='Hours'   && r.Active_Time__c >= 1){
+        If(r.Complexity__c != 'Difficult'){
+          r.addError('Check your code, Recipe takes 60 mins/an hr. It should be flagged as difficult');
+          System.debug('Check your code, Recipe takes 60 mins/an hr. It should be flagged as difficult');
+        }else{
+          System.debug('Handling Difficult Recipe: '+ r.Complexity__c);
+          System.assertEquals('Difficult', r.Complexity__c);
+        }                    
+      }else if(r.Servings__c > 4 &&(r.Active_Time_Units__c=='Minutes' && r.Active_Time__c < 60 ||
+                      r.Active_Time_Units__c=='Hours'   && r.Active_Time__c < 1)){
+        System.debug('Handling Moderate Recipe: ' + r.Complexity__c);
+        System.assertEquals('Moderate', r.Complexity__c);
+      }else{
+        System.debug('Handling Simple Recipe: '+ r.Complexity__c);
+        System.assertEquals('Simple', r.Complexity__c);                            
+      }
+    }	        	
+  Test.stopTest();
+}
