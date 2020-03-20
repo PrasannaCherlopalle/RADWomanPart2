@@ -1,0 +1,51 @@
+//test flagging receipes as draft
+    @isTest static void testFlagAsDraft(){
+        Test.startTest();
+        	//Check if there are any draft recipes, get the number
+        	List<Recipe__c> lstDftRecipesBefore = [SELECT Id FROM Recipe__c Where Draft__c = true];
+        	Integer nDraftRecipes = lstDftRecipesBefore.size();
+        	System.debug('Draft Recipes Before Test: '+nDraftRecipes);
+        	
+        	//insert test data from static resource recipe_data.csv
+        	List<sObject> lstRecipes = Test.loadData(Recipe__c.SObjectType, 'Recipe_Data');
+        	system.assert(lstRecipes.size() == 11, 'Successfully loaded 11 recipes');
+        	
+        	//Based on precompiled test data there should be 5 draft recipes - one for each scenario 
+        	//(1. name blank, 2.Description blank, 3. Activity_time blank, 4. Activity time unit blank, 5. Number of servings blank)
+        	Integer nTotalDraftRecipes = nDraftRecipes+5;
+        	List<Recipe__c> lstDraftRecipes = [SELECT Id FROM Recipe__c Where Draft__c = true];
+        	System.debug('Total Draft Recipes: '+nTotalDraftRecipes);
+        	system.assert(lstDraftRecipes.size() == nTotalDraftRecipes, 'Yep! 5 draft recipes');
+    	Test.stopTest();
+    }
+	
+	@isTest static void testSetComplexityPositive(){
+        Test.startTest();
+        	List<Recipe__c> lstRecipes = new List<Recipe__c>();        
+        	lstRecipes.add(new Recipe__c(Name='Clam Chowder', 				Description__c='Creamy Clam Chowder', 			Servings__c = 20, 	Active_Time__c=2,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Gravy', 						Description__c='Turkey Gravy', 					Servings__c = 3,  	Active_Time__c=60,	Active_Time_Units__c='Minutes'));
+        	lstRecipes.add(new Recipe__c(Name='Creamy Corn Soup', 			Description__c='fresh sweet corn soup', 		Servings__c = 2,  	Active_Time__c=1,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Buttersquash Soup', 			Description__c='flavored butter squash soup', 	Servings__c = 2,  	Active_Time__c=0.5,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Chicken chunky noodle soup', Description__c='noodle soup', 					Servings__c = 2,  	Active_Time__c=70,	Active_Time_Units__c='Minutes'));
+        	lstRecipes.add(new Recipe__c(Name='Hot and Spicy Soup', 		Description__c='Spicy soup', 					Servings__c = 5,  	Active_Time__c=20,	Active_Time_Units__c='Minutes'));
+ 
+			insert lstRecipes;        
+        	system.assert(lstRecipes.size() == 6, 'Successfully loaded 6 recipes');        
+        	
+        	List<Recipe__c> lstRcipsWithComplexity = [SELECT Id, Servings__c, Active_Time__c, Active_Time_Units__c, Complexity__c FROM Recipe__c Where Draft__c = false];
+        	For(Recipe__c r: lstRcipsWithComplexity){
+                if(r.Active_Time_Units__c=='Minutes' && r.Active_Time__c > 60 ||
+                   r.Active_Time_Units__c=='Hours'   && r.Active_Time__c > 1){
+                    System.debug('Dealing with Difficult Recipe: '+ r.Complexity__c);
+                    System.assertEquals('Difficult', r.Complexity__c);
+                }else if(r.Servings__c > 4 &&(r.Active_Time_Units__c=='Minutes' && r.Active_Time__c < 60 ||
+                   							  r.Active_Time_Units__c=='Hours'   && r.Active_Time__c < 1)){
+                    System.debug('Dealing with Moderate Recipe: ' + r.Complexity__c);
+                    System.assertEquals('Moderate', r.Complexity__c);
+               	}else{
+                    System.debug('Dealing with Simple Recipe: '+ r.Complexity__c);
+                    System.assertEquals('Simple', r.Complexity__c);                            
+                }
+            }	        	
+    	Test.stopTest();
+    }
