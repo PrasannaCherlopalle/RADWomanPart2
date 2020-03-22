@@ -1,0 +1,12 @@
+public class ContactSearch {
+    public static List<contact> searchForContacts(String firstString, String secString){
+        //declare list to accept the query results
+        List<contact> lstContacts = [SELECT id, Name FROM Contact WHERE lastName = :firstString AND MailingPostalCode = :secString]; 
+        //if not found system.debug
+        if(lstContacts.Size() < 1){	
+        	System.debug('No results found for the search criteria');
+        }
+		//return query results
+        return lstContacts;
+    }
+}
