@@ -1,0 +1,12 @@
+public class ContactAndLeadSearch {
+	public static List<List<sObject>> searchContactsAndLeads(String strSearchString){
+        //declare list of lists to accept the SOSL query results
+        List<List<sObject>> lstResultSOSL = [FIND :strSearchString IN ALL FIELDS RETURNING Contact(firstName, lastName), Lead(firstName, lastName) ]; 
+        //if not found system.debug
+        if(lstResultSOSL.Size() < 1){	
+        	System.debug('No results found for the search criteria');
+        }
+		//return query results
+        return lstResultSOSL;
+    }
+}
