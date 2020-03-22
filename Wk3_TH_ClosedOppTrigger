@@ -1,0 +1,29 @@
+trigger ClosedOpportunityTrigger on Opportunity (before insert, after insert, before update, after update, before delete, after delete, after undelete) {
+	//Using Trigger.OperationType
+    Switch on Trigger.OperationType{
+        When BEFORE_INSERT { 
+            // Instantiate the Handler and set Trigger records
+        }
+    	When BEFORE_UPDATE {
+            // Instantiate the Handler and set Trigger records
+        }
+    	When BEFORE_DELETE {
+            // Instantiate the Handler and set Trigger records
+        }
+    	When AFTER_INSERT {
+            ClsdOppTriggerHandler handler = new ClsdOppTriggerHandler(Trigger.new);
+      		handler.handleAfterInsert();
+        }
+    	When AFTER_UPDATE {
+            // Instantiate the Handler and set Trigger records
+    		ClsdOppTriggerHandler handler = new ClsdOppTriggerHandler(Trigger.old, Trigger.new,Trigger.oldMap, Trigger.newMap);
+      		handler.handleAfterUpdate();
+        }
+    	When AFTER_DELETE {
+            // Instantiate the Handler and set Trigger records
+        }
+    	When AFTER_UNDELETE {
+            // Instantiate the Handler and set Trigger records
+        }
+    }
+}
