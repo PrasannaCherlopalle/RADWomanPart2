@@ -1,0 +1,52 @@
+public class ClsdOppTriggerHandler {
+	//trigger variables
+    List<Opportunity> oldRecords;
+    List<Opportunity> newRecords;
+    Map<ID, Opportunity> oldRecordsMap;
+    Map<ID, Opportunity> newRecordsMap;
+   
+    //Constructor for insert
+    public ClsdOppTriggerHandler (List<Opportunity> newRecs) {
+        this.newRecords = newRecs;
+    }
+    //constructor for update
+    public ClsdOppTriggerHandler (List<Opportunity> oldRecs, List<Opportunity> newRecs, Map<ID, Opportunity> oldRecMap, Map<ID, Opportunity> newRecMap) {
+        this.oldRecords = oldRecs;
+        this.newRecords = newRecs;
+        this.oldRecordsMap = oldRecMap;
+        this.newRecordsMap = newRecMap;
+    }
+    public void handleAfterInsert(){
+        addTask();
+    }
+    public void handleAfterUpdate(){
+        addTask();
+    }
+    
+    public void addTask(){
+        //declare a new task list
+        List<Task> lstTask = new List<Task>(); 
+        
+        //for each opportunity (eOpp) in trigger.new set the task details and add to the list
+        for(Opportunity eOpp : this.newRecords){
+            if(eOpp.stageName == 'Closed Won'){
+                //set the task details
+                Task oppTask = new Task();
+                oppTask.Subject = 'Follow Up Test Task';
+                oppTask.WhatId = eOpp.Id;
+                oppTask.ActivityDate = date.today()+5;
+                oppTask.Priority = 'Normal';
+                
+                //add the new task to the list
+                lstTask.add(oppTask);
+                System.debug('Adding Test Task');
+            }
+        }
+        //insert the list of tasks
+        if (lstTask.size() > 0){
+            System.debug('I am inside if statement size of the list:' + lstTask.size());
+        	insert lstTask;
+        }
+        
+    }
+}
