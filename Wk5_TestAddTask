@@ -1,0 +1,91 @@
+@isTest static void testAddTask(){
+        Test.startTest();  
+        	//insert test data from static resource recipe_data.csv
+        	//List<Recipe__c> lstRecipes = Test.loadData(Recipe__c.SObjectType, 'NonDraftRecipe_Data');
+        	List<Recipe__c> lstRecipes = new List<Recipe__c>();        
+        	lstRecipes.add(new Recipe__c(Name='Clam Chowder', 				Description__c='Creamy Clam Chowder', 			Servings__c = 20, 	Active_Time__c=2,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Gravy', 						Description__c='Turkey Gravy', 					Servings__c = 3,  	Active_Time__c=65,	Active_Time_Units__c='Minutes'));
+        	lstRecipes.add(new Recipe__c(Name='Creamy Corn Soup', 			Description__c='fresh sweet corn soup', 		Servings__c = 2,  	Active_Time__c=1,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Buttersquash Soup', 			Description__c='flavored butter squash soup', 	Servings__c = 2,  	Active_Time__c=0.5,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Chicken chunky noodle soup', Description__c='noodle soup', 					Servings__c = 2,  	Active_Time__c=70,	Active_Time_Units__c='Minutes'));
+        	lstRecipes.add(new Recipe__c(Name='Hot and Spicy Soup', 		Description__c='Spicy soup', 					Servings__c = 5,  	Active_Time__c=20,	Active_Time_Units__c='Minutes'));
+ 			    lstRecipes.add(new Recipe__c(Name='Squash Soup', Description__c='Yellow squash Soup', Servings__c = -20, 	Active_Time__c=2,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Pumpkin Soup', Description__c='Yellow pumpkin Soup', Servings__c = 20, 	Active_Time__c=-2,	Active_Time_Units__c='Hours'));
+        	lstRecipes.add(new Recipe__c(Name='Carrot Soup', Description__c='Carrot Soup', Servings__c = 20, 	Active_Time__c=-20,	Active_Time_Units__c='Minutes'));
+
+        	Database.SaveResult[] srLstRcpes = Database.insert(lstRecipes);
+        	system.assert(srLstRcpes.size() == 9, 'Successfully loaded 9 recipes');
+        	system.debug( 'Successfully loaded '+ srLstRcpes.size()+ ' recipes');
+        	ID rId;
+        	List<Id> rIdList = new List<id>();
+        	for (Database.SaveResult srL : srLstRcpes){
+   			 	      rId = srL.getId();
+                rIdList.add(rId);
+			    }
+    
+        	//insert test data from static resource CookBook_data.csv
+        	//List<sObject> lstcBooks = Test.loadData(CookBook__c.SObjectType, 'CookBook_Data');
+        	List<CookBook__c> lstcBooks = new List<CookBook__c>(); 
+        	lstcBooks.add(new CookBook__c(Name='Hearty Soups', Publish_Date__c= Date.Today()-9,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Soups & Soups', Publish_Date__c=Date.Today()-8,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Chicken Soup for Soul', Publish_Date__c=Date.Today()-7,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Winning Soups', Publish_Date__c=Date.Today()-6,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Delicious Soups', Publish_Date__c=Date.Today()-5,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Soups & Appetizers', Publish_Date__c=Date.Today()-4,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Soup Starters', Publish_Date__c=Date.Today()-3,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Kids Soup Menu', Publish_Date__c=Date.Today()-2,	Status__c = 'Published'));
+        	lstcBooks.add(new CookBook__c(Name='Kid Friendly Soups', Publish_Date__c=Date.Today()-1,	Status__c = 'Published'));	
+        	Database.SaveResult[] srLstcBooks = Database.insert(lstcBooks);
+        	system.assert(srLstcBooks.size() == 9, 'Successfully loaded 9 Cook Books');
+        	system.debug( 'Successfully loaded '+ srLstcBooks.size()+ ' CookBooks');
+        	ID cId;
+        	List<Id> cIdList = new List<id>();
+        	for (Database.SaveResult srL : srLstcBooks){
+   			 	      rId = srL.getId();
+                cIdList.add(rId);
+			    }
+			
+        	// insert test data into Recipe Usage Object        
+        	List<Recipe_Usage__C> lstrUsage = new List<Recipe_Usage__C>();        
+        	for(integer i=0 ; i<rIdList.size() ; i++){
+            	Recipe_Usage__C rUsage = new Recipe_Usage__C();
+                rUsage.Recipe__c = rIdList[i];
+                rUsage.CookBook__c = cIdList[i];
+                lstrUsage.add(rUsage);
+        	}
+        	if(lstrUsage.size() >0){
+                Database.SaveResult[] srLstRUsage = Database.insert(lstrUsage);
+        		system.assert(srLstRUsage.size() == 9, 'Successfully loaded 9 Recipe Usage Records');
+            	system.debug( 'Successfully loaded '+ srLstRUsage.size()+ ' RUsage');
+            }
+        	
+        	//insert test data into task object
+        	List<Task> lstTask = new List<Task>();
+        	for(Recipe__c Rcpe : [SELECT Id, (Select Cookbook__c, Cookbook__r.Name, Recipe__c, Recipe__r.Name, Cookbook__r.OwnerId, Cookbook__r.Publish_Date__c FROM Recipe_Usages__r)
+									FROM Recipe__c
+                               	   WHERE Id in : rIdList
+                                     AND Draft__c = False]){
+             	String taskDescription = '';
+            	//for each recipe loop through child records  
+                for(Recipe_Usage__c rUsage : Rcpe.Recipe_Usages__r){
+                    taskDescription = taskDescription + '\n'+ rUsage.CookBook__r.name.toUpperCase() +' - Published on ' + String.valueOfGmt(rUsage.Cookbook__r.Publish_Date__c);                            
+                }
+                // for each child record loop through for second time
+                for(Recipe_Usage__c rUsage : Rcpe.Recipe_Usages__r){
+                     Task rTask = new Task();
+                        rTask.OwnerId 		= rUsage.Cookbook__r.OwnerId;
+                        rTask.ActivityDate 	= System.Today().addDays(7);
+                        rTask.Status 		= 'Not Started';
+                        rTask.whatId		= rUsage.Recipe__c;
+                        rTask.Subject 		= 'Recipe Review Task';
+                        rTask.Description 	= 'Task created to review '+ rUsage.Recipe__r.Name + ' recipe in ' + taskDescription + ' cookbooks';
+                     lstTask.add(rTask);                           
+                }    
+            }
+        	if(lstTask.size() >0){
+            	Database.SaveResult[] srLstTasks = Database.insert(lstTask);
+        		system.assert(srLstTasks.size() == 9, 'Successfully loaded 9 Tasks');
+            	system.debug( 'Successfully loaded '+ srLstTasks.size()+ ' Tasks');
+            }            
+       Test.stopTest(); 
+    }
