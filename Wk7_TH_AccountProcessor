@@ -1,0 +1,41 @@
+public class AccountProcessor {
+    @future
+    public static void countContacts(List<ID> accIds){
+        List<Account> listacc = [SELECT id,Number_of_Contacts__c,(SELECT id from contacts) from account where id in : accIds];
+        for (account acc : listacc){
+            List<Contact> con = acc.contacts;
+            acc.Number_of_Contacts__c = con.size();
+        }
+        update listacc;
+    }
+
+}
+
+AccountProcessTest class:
+
+@isTest
+public class AccountProcessorTest {
+    public static testmethod void TestAccountProcessorTest(){
+     Account a = new Account();
+        a.Name = 'Test Account';
+        Insert a;
+        system.debug('account a :'+a.id);
+        
+        Contact cont = New Contact();
+        cont.FirstName ='Test';
+        cont.LastName ='Contact';
+        cont.AccountId = a.Id;
+        Insert cont;
+        system.debug('contact cont :' +cont.id);
+        
+        List<Id> accIds = new List<Id>();
+        accIds.add(a.Id);
+        
+        Test.startTest();
+			    AccountProcessor.countContacts(accIds);
+        Test.stopTest();
+        
+        Account ACC = [select Number_of_Contacts__c from Account where id = :a.id LIMIT 1];
+        System.assertEquals(ACC.Number_of_Contacts__c, 1);
+    }
+}
