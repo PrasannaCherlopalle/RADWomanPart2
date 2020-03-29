@@ -15,7 +15,7 @@ AccountProcessTest class:
 
 @isTest
 public class AccountProcessorTest {
-    public static testmethod void TestAccountProcessorTest(){
+    public static void testAccountProcessor(){
      Account a = new Account();
         a.Name = 'Test Account';
         Insert a;
