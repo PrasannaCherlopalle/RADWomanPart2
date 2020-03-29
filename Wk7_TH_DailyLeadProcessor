@@ -13,7 +13,7 @@ global class DailyLeadProcessor implements Schedulable {
 
 @isTest
 private class DailyLeadProcessorTest {
-	static testMethod void testDailyLeadProcessor() {
+	static void testDailyLeadProcessor() {
 		String CRON_EXP = '0 0 1 * * ?';
 		List<Lead> lList = new List<Lead>();
 	    for (Integer i = 0; i < 200; i++) {
