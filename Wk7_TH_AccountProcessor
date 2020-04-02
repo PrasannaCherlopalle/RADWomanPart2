@@ -36,6 +36,7 @@ public class AccountProcessorTest {
         Test.stopTest();
         
         Account ACC = [select Number_of_Contacts__c from Account where id = :a.id LIMIT 1];
-        System.assertEquals(ACC.Number_of_Contacts__c, 1);
+	//System.assertEquals(expected, actual, msg)
+        System.assertEquals(1, ACC.Number_of_Contacts__c);
     }
 }
