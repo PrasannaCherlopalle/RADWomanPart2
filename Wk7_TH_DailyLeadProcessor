@@ -1,13 +1,13 @@
 global class DailyLeadProcessor implements Schedulable {
   global void execute(SchedulableContext ctx) {
-      List<Lead> lstLeads = [Select Id, LeadSource from Lead where LeadSource = null];
+      List<Lead> lstLeads = [Select Id, LeadSource from Lead where LeadSource = null LIMIT 200];
         
       if(!lstLeads.isEmpty()) {
         for(Lead l: lstLeads) {
           l.LeadSource = 'Dreamforce';
         }
         update lstLeads;
-		  }
+     }
   }
 }
 
@@ -23,6 +23,8 @@ private class DailyLeadProcessorTest {
 		  
 		Test.startTest();
 			String jobId = System.schedule('DailyLeadProcessor', CRON_EXP, new DailyLeadProcessor()); 
+			//System.assertEquesl(Expecte, actual, msg);
+			System.assertEquesl(200, Select count() from lead where leadsource = 'Dreamforce', 'Lead source set for 200 records as expected');
 		Test.stopTest();
     }
 }
